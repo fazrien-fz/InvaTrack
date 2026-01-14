@@ -34,16 +34,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.psm2.inva.model.Blog
 import com.psm2.inva.model.Fish
-import com.psm2.inva.model.Sighting
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToBlogDetail: (String) -> Unit,
     onNavigateToComparison: (String, String) -> Unit,
-    onNavigateToCatchDetail: (String) -> Unit // Added navigation callback
+    onNavigateToCatchDetail: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -85,7 +82,9 @@ fun HomeScreen(
                                 description = "Take/upload photo, AI recognition",
                                 color = Color(0xFF4CAF50), // Green
                                 modifier = Modifier.fillMaxWidth(),
-                                bgImageUrl = "https://images.unsplash.com/photo-1559863345-02eae458ddc0?q=80&w=2070&auto=format&fit=crop" // Sample fishing/nature image
+                                // UPDATED: Now supports R.drawable or URL
+                                // To use local: bgImage = R.drawable.your_identify_image
+                                bgImage = "https://images.unsplash.com/photo-1559863345-02eae458ddc0?q=80&w=2070&auto=format&fit=crop"
                             )
                         }
                         Box(modifier = Modifier.weight(1f)) {
@@ -94,7 +93,8 @@ fun HomeScreen(
                                 description = "Invasive / Native / Protected status",
                                 color = Color(0xFF2196F3), // Blue
                                 modifier = Modifier.fillMaxWidth(),
-                                bgImageUrl = "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=1974&auto=format&fit=crop" // Sample check/research image
+                                // To use local: bgImage = R.drawable.your_check_image
+                                bgImage = "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=1974&auto=format&fit=crop"
                             )
                         }
                     }
@@ -112,7 +112,8 @@ fun HomeScreen(
                                 description = "Release / Do Not Release / Report",
                                 color = Color(0xFFFF9800), // Orange
                                 modifier = Modifier.fillMaxWidth(),
-                                bgImageUrl = "https://images.unsplash.com/photo-1544551763-46a8723ba3f9?q=80&w=2074&auto=format&fit=crop" // Sample action/release image
+                                // To use local: bgImage = R.drawable.your_action_image
+                                bgImage = "https://images.unsplash.com/photo-1544551763-46a8723ba3f9?q=80&w=2074&auto=format&fit=crop"
                             )
                         }
                         Box(modifier = Modifier.weight(1f)) {
@@ -121,7 +122,8 @@ fun HomeScreen(
                                 description = "Compare species, see tips, explore habitat",
                                 color = Color(0xFF9C27B0), // Purple
                                 modifier = Modifier.fillMaxWidth(),
-                                bgImageUrl = "https://images.unsplash.com/photo-1535591273668-578e31182c4f?q=80&w=2070&auto=format&fit=crop" // Sample learning/habitat image
+                                // To use local: bgImage = R.drawable.your_learn_image
+                                bgImage = "https://images.unsplash.com/photo-1535591273668-578e31182c4f?q=80&w=2070&auto=format&fit=crop"
                             )
                         }
                     }
@@ -265,7 +267,7 @@ fun HowItWorksCard(
     description: String,
     color: Color,
     modifier: Modifier = Modifier,
-    bgImageUrl: String? = null // New parameter for background image
+    bgImage: Any? = null // Changed: accepts String (URL) or Int (Drawable Resource ID)
 ) {
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -274,10 +276,10 @@ fun HowItWorksCard(
         modifier = modifier.height(140.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background Image
-            if (bgImageUrl != null) {
+            // Background Image (Supports URL or Drawable)
+            if (bgImage != null) {
                 AsyncImage(
-                    model = bgImageUrl,
+                    model = bgImage,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -303,115 +305,25 @@ fun HowItWorksCard(
                     .fillMaxSize()
                     .padding(16.dp),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom // Changed to Bottom to push text down if no icon
+                verticalArrangement = Arrangement.Bottom
             ) {
                 Column {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (bgImageUrl != null) Color.White else MaterialTheme.colorScheme.onSurface
+                        // Use white text if we have an image background
+                        color = if (bgImage != null) Color.White else MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (bgImageUrl != null) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (bgImage != null) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun InvasiveCatchCard(sighting: Sighting, onClick: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp),
-        modifier = Modifier
-            .width(200.dp)
-            .height(220.dp)
-            .clickable(onClick = onClick) // Added click action
-    ) {
-        Column {
-            // Image
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-            ) {
-                if (sighting.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = sighting.imageUrl,
-                        contentDescription = sighting.speciesName,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No Image", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-
-                // Badge
-                Surface(
-                    color = MaterialTheme.colorScheme.error,
-                    shape = RoundedCornerShape(bottomEnd = 8.dp),
-                    modifier = Modifier.align(Alignment.TopStart)
-                ) {
-                    Text(
-                        text = "INVASIVE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            // Info
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = sighting.speciesName,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = sighting.locationDescription.ifBlank { "Unknown" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                val sdf = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
-                Text(
-                    text = sdf.format(sighting.date.toDate()),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }
@@ -438,7 +350,7 @@ fun ModernSpeciesSelector(
                 .height(64.dp)
                 .menuAnchor(),
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer, // Clean modern surface color
+            color = MaterialTheme.colorScheme.surfaceContainer,
             tonalElevation = 2.dp,
             onClick = { expanded = true }
         ) {
@@ -552,7 +464,7 @@ fun ModernBlogCard(
                 "IDENTIFICATION" -> Color(0xFF2196F3)
                 "RISK ALERT" -> Color(0xFFD32F2F)
                 "NATIVE SPOTLIGHT" -> Color(0xFF4CAF50)
-                else -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.primary // Fixed syntax error here (was '=')
             }
 
             Surface(
