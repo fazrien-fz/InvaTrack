@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "286211023553",
+    "project_id": "psm2-inva",
+    "storage_bucket": "psm2-inva.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:286211023553:android:ae4c722f6f3bdd6e576a40",
+        "android_client_info": {
+          "package_name": "com.psm2.inva"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "286211023553-nioo98fqhgmdfm9qo4ac73qhsrn7ncll.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.psm2.inva",
+            "certificate_hash": "31ae3f5c185a569f12d6cbb3f5f3b5d8dfb5c1e2"
+          }
+        },
+        {
+          "client_id": "286211023553-567dte5tjgars3p3sthnjim57696jvtd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgASUgiCMvaRq0842MYe0LyQcfBK37GbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "286211023553-567dte5tjgars3p3sthnjim57696jvtd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
