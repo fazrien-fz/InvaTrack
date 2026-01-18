@@ -54,10 +54,7 @@ class FishRepositoryImpl(
 
     override suspend fun updateFish(
         fish: Fish,
-        newImageUri: Uri?,
-        headUri: Uri?,
-        bodyUri: Uri?,
-        tailUri: Uri?
+        newImageUri: Uri?
     ): Result<Unit> {
         return try {
             var fishToUpdate = fish
@@ -76,24 +73,6 @@ class FishRepositoryImpl(
                 fishToUpdate = fishToUpdate.copy(imageUrl = url)
             }
 
-            // Update Head Image
-            if (headUri != null) {
-                val url = upload(headUri, "fish_images/${fish.id}/head.jpg")
-                fishToUpdate = fishToUpdate.copy(headImageUrl = url)
-            }
-
-            // Update Body Image
-            if (bodyUri != null) {
-                val url = upload(bodyUri, "fish_images/${fish.id}/body.jpg")
-                fishToUpdate = fishToUpdate.copy(bodyImageUrl = url)
-            }
-
-            // Update Tail Image
-            if (tailUri != null) {
-                val url = upload(tailUri, "fish_images/${fish.id}/tail.jpg")
-                fishToUpdate = fishToUpdate.copy(tailImageUrl = url)
-            }
-
             firestore.collection("fish").document(fish.id).set(fishToUpdate).await()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -108,11 +87,6 @@ class FishRepositoryImpl(
             try {
                 storage.reference.child("fish_images/${fishId}.jpg").delete().await()
             } catch (e: Exception) {}
-
-            // Try to delete parts images
-            try { storage.reference.child("fish_images/${fishId}/head.jpg").delete().await() } catch (e: Exception) {}
-            try { storage.reference.child("fish_images/${fishId}/body.jpg").delete().await() } catch (e: Exception) {}
-            try { storage.reference.child("fish_images/${fishId}/tail.jpg").delete().await() } catch (e: Exception) {}
 
             Result.success(Unit)
         } catch (e: Exception) {

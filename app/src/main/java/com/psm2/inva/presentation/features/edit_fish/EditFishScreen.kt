@@ -71,6 +71,7 @@ fun EditFishScreen(
             onNavigateUp()
         }
     }
+    // Delete effects are kept harmlessly in case ViewModel triggers them, though UI trigger is removed
     LaunchedEffect(state.deleteError) {
         state.deleteError?.let {
             Toast.makeText(context, "Error: $it", Toast.LENGTH_LONG).show()
@@ -261,44 +262,7 @@ fun EditFishScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                HorizontalDivider()
-
-                Text(
-                    "Morphological Details",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.Start)
-                )
-
-                // Head Section
-                EditComparisonSection(
-                    title = "Head Details",
-                    description = state.headDescription,
-                    onDescriptionChange = { viewModel.updateHeadDescription(it) },
-                    imageUri = state.headUri,
-                    existingImageUrl = state.headImageUrl,
-                    onImageSelected = { viewModel.updateHeadUri(it) }
-                )
-
-                // Body Section
-                EditComparisonSection(
-                    title = "Body Details",
-                    description = state.bodyDescription,
-                    onDescriptionChange = { viewModel.updateBodyDescription(it) },
-                    imageUri = state.bodyUri,
-                    existingImageUrl = state.bodyImageUrl,
-                    onImageSelected = { viewModel.updateBodyUri(it) }
-                )
-
-                // Tail Section
-                EditComparisonSection(
-                    title = "Tail Details",
-                    description = state.tailDescription,
-                    onDescriptionChange = { viewModel.updateTailDescription(it) },
-                    imageUri = state.tailUri,
-                    existingImageUrl = state.tailImageUrl,
-                    onImageSelected = { viewModel.updateTailUri(it) }
-                )
+                // Removed Morphological Details Section (Head, Body, Tail)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -314,91 +278,10 @@ fun EditFishScreen(
                     }
                 }
 
-                TextButton(
-                    onClick = { viewModel.showDeleteConfirmation(true) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete Species")
-                }
+                // Removed Delete Species Button and its Dialog logic
 
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
-    }
-
-    if (state.showDeleteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { viewModel.showDeleteConfirmation(false) },
-            title = { Text("Delete Species") },
-            text = { Text("Are you sure you want to delete this species? This action cannot be undone.") },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.deleteFish() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.showDeleteConfirmation(false) }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun EditComparisonSection(
-    title: String,
-    description: String,
-    onDescriptionChange: (String) -> Unit,
-    imageUri: Uri?,
-    existingImageUrl: String,
-    onImageSelected: (Uri?) -> Unit
-) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult = { onImageSelected(it) }
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
-
-        // Image Picker
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .clickable { launcher.launch("image/*") }
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            val imageToShow = imageUri ?: existingImageUrl
-            if (imageToShow is Uri || (imageToShow is String && imageToShow.isNotBlank())) {
-                Image(
-                    painter = rememberAsyncImagePainter(imageToShow),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text("Add $title Photo", color = MaterialTheme.colorScheme.onSecondaryContainer)
-                }
-            }
-        }
-
-        OutlinedTextField(
-            value = description,
-            onValueChange = onDescriptionChange,
-            label = { Text("Description") },
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 3
-        )
     }
 }

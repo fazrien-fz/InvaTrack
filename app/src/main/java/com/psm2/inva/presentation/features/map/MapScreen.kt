@@ -49,6 +49,8 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.TileOverlay
+import com.google.maps.android.heatmaps.HeatmapTileProvider
 import com.psm2.inva.model.Sighting
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.snapshotFlow
@@ -160,17 +162,26 @@ private fun MapContent(
 
             // 1. Heatmap Layer (Invasive) - Bottom Layer
             if (state.showInvasiveHeatmap) {
-                state.sightings.filter { it.category.equals("Invasive", ignoreCase = true) }.forEach { sighting ->
-                    // Filtered by dropdown search if active (using contains for partial match)
-                    if (state.searchQuery.isEmpty() || sighting.speciesName.contains(state.searchQuery, ignoreCase = true)) {
-                        Circle(
-                            center = LatLng(sighting.location.latitude, sighting.location.longitude),
-                            radius = 1000.0, // Large radius for heat effect
-                            fillColor = Color(0x33FF0000), // Transparent Red
-                            strokeColor = Color.Transparent,
-                            strokeWidth = 0f
-                        )
+                // Collect all invasive locations
+                val heatmapPoints = remember(state.sightings, state.searchQuery) {
+                    state.sightings.filter {
+                        it.category.equals("Invasive", ignoreCase = true) &&
+                                (state.searchQuery.isEmpty() || it.speciesName.contains(state.searchQuery, ignoreCase = true))
+                    }.map { LatLng(it.location.latitude, it.location.longitude) }
+                }
+
+                if (heatmapPoints.isNotEmpty()) {
+                    // Initialize the HeatmapTileProvider
+                    val tileProvider = remember(heatmapPoints) {
+                        HeatmapTileProvider.Builder()
+                            .data(heatmapPoints)
+                            .radius(50) // Adjust radius (20-50 usually works well)
+                            .opacity(0.7)
+                            .build()
                     }
+
+                    // Render the Tile Overlay
+                    TileOverlay(tileProvider = tileProvider)
                 }
             }
 

@@ -82,14 +82,12 @@ class ReportViewModel(
     }
 
     fun updateLength(length: String) {
-        // Allow digits and one decimal point
         if (length.count { it == '.' } <= 1 && length.replace(".", "").all { it.isDigit() }) {
             _state.update { it.copy(length = length) }
         }
     }
 
     fun updateWeight(weight: String) {
-        // Allow digits and one decimal point
         if (weight.count { it == '.' } <= 1 && weight.replace(".", "").all { it.isDigit() }) {
             _state.update { it.copy(weight = weight) }
         }
@@ -113,12 +111,8 @@ class ReportViewModel(
 
     fun updateLocation(latLng: LatLng, context: Context, explicitName: String? = null) {
         _state.update { it.copy(location = latLng) }
-
-        if (explicitName != null) {
-            _state.update { it.copy(locationDescription = explicitName) }
-        } else {
-            getAddressFromLocation(latLng, context)
-        }
+        // Always fetch address details to separate place name from state info
+        getAddressFromLocation(latLng, context, explicitName)
     }
 
     fun updateDate(dateMillis: Long) {
@@ -159,39 +153,73 @@ class ReportViewModel(
         }
     }
 
-    private fun getAddressFromLocation(latLng: LatLng, context: Context) {
+    private fun getAddressFromLocation(latLng: LatLng, context: Context, explicitName: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
                 @Suppress("DEPRECATION")
-                val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 3)
+                val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
 
                 if (!addresses.isNullOrEmpty()) {
-                    val bestAddress = addresses.find {
-                        !it.featureName.isNullOrBlank() &&
-                                !it.featureName.all { c -> c.isDigit() } &&
-                                it.featureName != it.thoroughfare
-                    } ?: addresses[0]
+                    val address = addresses[0]
 
-                    val locationName = when {
-                        !bestAddress.featureName.isNullOrBlank() && !bestAddress.featureName.all { c -> c.isDigit() } && bestAddress.featureName != bestAddress.thoroughfare -> bestAddress.featureName
-                        !bestAddress.thoroughfare.isNullOrBlank() -> bestAddress.thoroughfare
-                        !bestAddress.locality.isNullOrBlank() -> bestAddress.locality
-                        else -> "Unknown Location"
+                    // 1. Determine Location Description (User facing name)
+                    // Priority: Explicit Name (POI) -> Feature Name -> Locality -> "Unknown"
+                    val featureName = explicitName ?: address.featureName
+                    val locality = address.locality // City
+                    val subAdminArea = address.subAdminArea // District
+
+                    val descriptionParts = mutableListOf<String>()
+
+                    if (!featureName.isNullOrBlank() && featureName != locality && featureName != subAdminArea) {
+                        descriptionParts.add(featureName)
+                    } else if (!locality.isNullOrBlank()) {
+                        descriptionParts.add(locality)
+                    } else if (!subAdminArea.isNullOrBlank()) {
+                        descriptionParts.add(subAdminArea)
+                    } else {
+                        descriptionParts.add("Dropped Pin")
                     }
 
-                    val fullDescription = if (locationName != bestAddress.locality && !bestAddress.locality.isNullOrBlank()) {
-                        "$locationName, ${bestAddress.locality}"
+                    val finalDescription = descriptionParts.joinToString(", ")
+
+                    // 2. Determine Location State (Administrative Info)
+                    // Format: "State, CountryCode" (e.g., "Pahang, MY")
+                    val adminArea = address.adminArea // State
+                    val countryCode = address.countryCode ?: "MY"
+
+                    val stateInfo = if (!adminArea.isNullOrBlank()) {
+                        "$adminArea, $countryCode"
                     } else {
-                        locationName
+                        countryCode
                     }
 
                     withContext(Dispatchers.Main) {
-                        _state.update { it.copy(locationDescription = fullDescription) }
+                        _state.update {
+                            it.copy(
+                                locationDescription = finalDescription,
+                                locationState = stateInfo
+                            )
+                        }
+                    }
+                } else if (explicitName != null) {
+                    // Fallback: Use explicit name, unknown state
+                    withContext(Dispatchers.Main) {
+                        _state.update {
+                            it.copy(
+                                locationDescription = explicitName,
+                                locationState = ""
+                            )
+                        }
                     }
                 }
             } catch (e: Exception) {
                 Log.e("ReportViewModel", "Geocoding failed", e)
+                if (explicitName != null) {
+                    withContext(Dispatchers.Main) {
+                        _state.update { it.copy(locationDescription = explicitName) }
+                    }
+                }
             }
         }
     }
@@ -204,7 +232,6 @@ class ReportViewModel(
             _state.update { it.copy(submissionError = "User not signed in.") }
             return
         }
-        // Essential Validation
         if (currentState.imageUris.isEmpty()) {
             _state.update { it.copy(submissionError = "Photo evidence is required.") }
             return
@@ -238,18 +265,18 @@ class ReportViewModel(
                     speciesName = currentState.speciesName,
                     category = currentState.category,
                     imageUrls = uploadedUrls,
-
-                    // Angler Stats
                     quantity = qty,
                     length = currentState.length.toDoubleOrNull() ?: 0.0,
                     weight = currentState.weight.toDoubleOrNull() ?: 0.0,
-
-                    // Context & Essentials
                     actionTaken = currentState.actionTaken,
                     baitUsed = currentState.baitUsed,
                     locationPrivacy = currentState.locationPrivacy,
                     location = GeoPoint(currentState.location.latitude, currentState.location.longitude),
+
+                    // Save separated fields
                     locationDescription = currentState.locationDescription,
+                    locationState = currentState.locationState,
+
                     date = Timestamp(Date(currentState.selectedDateMillis))
                 )
 
@@ -269,6 +296,7 @@ class ReportViewModel(
                         actionTaken = "Released",
                         locationPrivacy = "Share Spot",
                         locationDescription = "",
+                        locationState = "",
                         selectedDateMillis = System.currentTimeMillis()
                     )
                 }

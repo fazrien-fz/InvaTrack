@@ -73,14 +73,14 @@ import com.psm2.inva.presentation.features.catch_detail.CatchDetailScreen
 import com.psm2.inva.presentation.features.catch_detail.CatchDetailViewModel
 import com.psm2.inva.presentation.features.classification.ClassificationResultScreen
 import com.psm2.inva.presentation.features.classification.ClassificationResultViewModel
-import com.psm2.inva.presentation.features.comparison.ComparisonScreen
-import com.psm2.inva.presentation.features.comparison.ComparisonViewModel
 import com.psm2.inva.presentation.features.edit_blog.EditBlogScreen
 import com.psm2.inva.presentation.features.edit_blog.EditBlogViewModel
 import com.psm2.inva.presentation.features.edit_catch.EditCatchScreen
 import com.psm2.inva.presentation.features.edit_catch.EditCatchViewModel
 import com.psm2.inva.presentation.features.edit_fish.EditFishScreen
 import com.psm2.inva.presentation.features.edit_fish.EditFishViewModel
+import com.psm2.inva.presentation.features.edit_profile.EditProfileScreen
+import com.psm2.inva.presentation.features.edit_profile.EditProfileViewModel
 import com.psm2.inva.presentation.features.home.HomeScreen
 import com.psm2.inva.presentation.features.home.HomeViewModel
 import com.psm2.inva.presentation.features.identify.IdentifyScreen
@@ -96,6 +96,8 @@ import com.psm2.inva.presentation.features.sign_in.SignInScreen
 import com.psm2.inva.presentation.features.sign_in.SignInViewModel
 import com.psm2.inva.presentation.features.species_details.SpeciesDetailScreen
 import com.psm2.inva.presentation.features.species_details.SpeciesDetailViewModel
+import com.psm2.inva.presentation.features.stats.StatsScreen
+import com.psm2.inva.presentation.features.stats.StatsViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -106,8 +108,10 @@ sealed class Screen(val route: String) {
     object SignIn : Screen("sign_in")
     object MainTabs : Screen("main_tabs")
     object Report : Screen("report")
+    object Stats : Screen("stats")
     object AddFish : Screen("add_fish")
     object ScanFish : Screen("scan_fish")
+    object EditProfile : Screen("edit_profile")
     object SpeciesDetail : Screen("species_detail/{fishId}") {
         fun createRoute(fishId: String) = "species_detail/$fishId"
     }
@@ -134,9 +138,6 @@ sealed class Screen(val route: String) {
     }
     object BlogDetail : Screen("blog_detail/{blogId}") {
         fun createRoute(blogId: String) = "blog_detail/$blogId"
-    }
-    object Comparison : Screen("comparison/{fishId1}/{fishId2}") {
-        fun createRoute(fishId1: String, fishId2: String) = "comparison/$fishId1/$fishId2"
     }
 }
 
@@ -194,6 +195,14 @@ fun AppNavigation() {
             )
         }
 
+        composable(Screen.Stats.route) {
+            val statsViewModel = koinViewModel<StatsViewModel>()
+            StatsScreen(
+                viewModel = statsViewModel,
+                onNavigateUp = { navController.navigateUp() }
+            )
+        }
+
         composable(Screen.AddFish.route) {
             val addFishViewModel = koinViewModel<AddFishViewModel>()
             AddFishScreen(
@@ -207,6 +216,14 @@ fun AppNavigation() {
                 onImageCaptured = { uri ->
                     navController.navigate(Screen.ClassificationResult.createRoute(uri))
                 },
+                onNavigateUp = { navController.navigateUp() }
+            )
+        }
+
+        composable(Screen.EditProfile.route) {
+            val editProfileViewModel = koinViewModel<EditProfileViewModel>()
+            EditProfileScreen(
+                viewModel = editProfileViewModel,
                 onNavigateUp = { navController.navigateUp() }
             )
         }
@@ -338,25 +355,6 @@ fun AppNavigation() {
                 }
             )
         }
-
-        composable(
-            route = Screen.Comparison.route,
-            arguments = listOf(
-                navArgument("fishId1") { type = NavType.StringType },
-                navArgument("fishId2") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val fishId1 = backStackEntry.arguments?.getString("fishId1") ?: ""
-            val fishId2 = backStackEntry.arguments?.getString("fishId2") ?: ""
-            val comparisonViewModel = koinViewModel<ComparisonViewModel>(
-                parameters = { parametersOf(fishId1, fishId2) }
-            )
-            ComparisonScreen(
-                viewModel = comparisonViewModel,
-                onNavigateUp = { navController.navigateUp() }
-            )
-        }
-
     }
 }
 
@@ -421,11 +419,14 @@ fun MainAppScaffold(rootNavController: NavHostController) {
                         onNavigateToBlogDetail = { blogId ->
                             rootNavController.navigate(Screen.BlogDetail.createRoute(blogId))
                         },
-                        onNavigateToComparison = { id1, id2 ->
-                            rootNavController.navigate(Screen.Comparison.createRoute(id1, id2))
-                        },
                         onNavigateToCatchDetail = { sightingId ->
                             rootNavController.navigate(Screen.CatchDetail.createRoute(sightingId))
+                        },
+                        onNavigateToSpeciesDetail = { fishId ->
+                            rootNavController.navigate(Screen.SpeciesDetail.createRoute(fishId))
+                        },
+                        onNavigateToStats = {
+                            rootNavController.navigate(Screen.Stats.route)
                         }
                     )
                 }
@@ -474,6 +475,9 @@ fun MainAppScaffold(rootNavController: NavHostController) {
                         },
                         onNavigateToCatchDetail = { sightingId ->
                             rootNavController.navigate(Screen.CatchDetail.createRoute(sightingId))
+                        },
+                        onNavigateToEditProfile = {
+                            rootNavController.navigate(Screen.EditProfile.route)
                         }
                     )
                 }

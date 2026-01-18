@@ -61,23 +61,16 @@ fun ReportScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var isMapInteracting by remember { mutableStateOf(false) }
 
-    // --- Permission Launcher ---
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = {
-            viewModel.getLocation(context)
-        }
+        onResult = { viewModel.getLocation(context) }
     )
 
-    // --- Image Picker (Multiple) ---
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
-        onResult = { uri ->
-            viewModel.addImageUri(uri)
-        }
+        onResult = { uri -> viewModel.addImageUri(uri) }
     )
 
-    // --- Effects ---
     LaunchedEffect(key1 = true) {
         locationPermissionLauncher.launch(
             arrayOf(
@@ -100,7 +93,6 @@ fun ReportScreen(
         }
     }
 
-    // --- UI ---
     Scaffold(
         topBar = {
             TopAppBar(
@@ -169,7 +161,7 @@ fun ReportScreen(
                 }
             }
 
-            // 2. SPECIES NAME (Searchable Dropdown)
+            // 2. SPECIES NAME
             var expanded by remember { mutableStateOf(false) }
             val suggestions = state.speciesSuggestions.filter {
                 it.name.contains(state.speciesName, ignoreCase = true) ||
@@ -217,7 +209,7 @@ fun ReportScreen(
                 }
             }
 
-            // 3. CATCH & RELEASE (Action Taken)
+            // 3. ACTION TAKEN & WARNING
             Column {
                 Text("Catch & Release? *", style = MaterialTheme.typography.labelLarge)
                 Row(
@@ -235,8 +227,6 @@ fun ReportScreen(
                     }
                 }
 
-                // --- INVASIVE SPECIES WARNING ---
-                // Only show if the selected species category is "Invasive" (case-insensitive)
                 if (state.category.equals("Invasive", ignoreCase = true)) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Card(
@@ -248,14 +238,10 @@ fun ReportScreen(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Warning",
-                                tint = Color(0xFFD32F2F)
-                            )
+                            Icon(Icons.Default.Warning, "Warning", tint = Color(0xFFD32F2F))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "WARNING: Invasive species must NOT be released back into the water.",
+                                "WARNING: Invasive species must NOT be released.",
                                 color = Color(0xFFD32F2F),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold
@@ -289,15 +275,11 @@ fun ReportScreen(
                 onValueChange = { viewModel.updateQuantity(it) },
                 label = { Text("Quantity") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Default: 1") }
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // 6. CATCH DATE AND TIME
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // 6. DATE/TIME
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val dateSdf = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
                 OutlinedTextField(
                     value = dateSdf.format(Date(state.selectedDateMillis)),
@@ -355,8 +337,7 @@ fun ReportScreen(
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent(PointerEventPass.Initial)
-                                val isPressed = event.changes.any { it.pressed }
-                                isMapInteracting = isPressed
+                                isMapInteracting = event.changes.any { it.pressed }
                             }
                         }
                     }
@@ -392,16 +373,21 @@ fun ReportScreen(
                 }
             }
 
-            // 8. LOCATION NAME
-            OutlinedTextField(
-                value = state.locationDescription,
-                onValueChange = { viewModel.updateLocationDescription(it) },
-                label = { Text("Location Name (e.g. Tasik Lagenda)") },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Tap place on map to auto-fill") }
-            )
+            // 8. LOCATION NAME & STATE DISPLAY
+            Column {
+                OutlinedTextField(
+                    value = state.locationDescription,
+                    onValueChange = { viewModel.updateLocationDescription(it) },
+                    label = { Text("Location Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("e.g. Tasek Lagenda") },
+                    supportingText = if (state.locationState.isNotBlank()) {
+                        { Text("Region: ${state.locationState}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                    } else null
+                )
+            }
 
-            // 9. LOCATION PRIVACY
+            // 9. PRIVACY
             Column {
                 Text("Location Privacy", style = MaterialTheme.typography.labelLarge)
                 Row(
@@ -422,7 +408,6 @@ fun ReportScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Submit Button
             Button(
                 onClick = { viewModel.submitReport() },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -437,7 +422,7 @@ fun ReportScreen(
         }
     }
 
-    // --- Date Picker Dialog ---
+    // Dialogs...
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = state.selectedDateMillis)
         DatePickerDialog(
@@ -452,7 +437,6 @@ fun ReportScreen(
         ) { DatePicker(state = datePickerState) }
     }
 
-    // --- Time Picker Dialog ---
     if (showTimePicker) {
         val calendar = Calendar.getInstance().apply { timeInMillis = state.selectedDateMillis }
         val timePickerState = rememberTimePickerState(initialHour = calendar.get(Calendar.HOUR_OF_DAY), initialMinute = calendar.get(Calendar.MINUTE))

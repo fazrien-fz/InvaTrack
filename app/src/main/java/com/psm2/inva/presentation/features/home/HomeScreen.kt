@@ -1,7 +1,8 @@
 package com.psm2.inva.presentation.features.home
 
-import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,43 +12,36 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.CompareArrows
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.psm2.inva.model.Blog
 import com.psm2.inva.model.Fish
+import com.psm2.inva.model.Sighting
+import com.psm2.inva.model.UserData
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToBlogDetail: (String) -> Unit,
-    onNavigateToComparison: (String, String) -> Unit,
-    onNavigateToCatchDetail: (String) -> Unit
+    onNavigateToCatchDetail: (String) -> Unit,
+    onNavigateToSpeciesDetail: (String) -> Unit,
+    onNavigateToStats: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-
-    // Local state for selections
-    var selectedFish1 by remember { mutableStateOf<Fish?>(null) }
-    var selectedFish2 by remember { mutableStateOf<Fish?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -56,354 +50,381 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = padding.calculateBottomPadding()),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
+            // 1. Welcome Header (New)
             item {
+                WelcomeHeader(user = state.user)
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- 1. HOW IT WORKS SECTION (2 Cards per Row) ---
-            item {
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    Text(
-                        text = "How It Works",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(bottom = 16.dp)
+            // 2. SPECIES SPOTLIGHT (Moved to Top for Visual Impact)
+            if (state.fishList.isNotEmpty()) {
+                item {
+                    SpeciesSpotlight(
+                        fishList = state.fishList,
+                        onFishClick = onNavigateToSpeciesDetail
                     )
-
-                    // Row 1
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            HowItWorksCard(
-                                title = "Identify",
-                                description = "Take/upload photo, AI recognition",
-                                color = Color(0xFF4CAF50), // Green
-                                modifier = Modifier.fillMaxWidth(),
-                                // UPDATED: Now supports R.drawable or URL
-                                // To use local: bgImage = R.drawable.your_identify_image
-                                bgImage = "https://images.unsplash.com/photo-1559863345-02eae458ddc0?q=80&w=2070&auto=format&fit=crop"
-                            )
-                        }
-                        Box(modifier = Modifier.weight(1f)) {
-                            HowItWorksCard(
-                                title = "Check",
-                                description = "Invasive / Native / Protected status",
-                                color = Color(0xFF2196F3), // Blue
-                                modifier = Modifier.fillMaxWidth(),
-                                // To use local: bgImage = R.drawable.your_check_image
-                                bgImage = "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=1974&auto=format&fit=crop"
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Row 2
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            HowItWorksCard(
-                                title = "Action",
-                                description = "Release / Do Not Release / Report",
-                                color = Color(0xFFFF9800), // Orange
-                                modifier = Modifier.fillMaxWidth(),
-                                // To use local: bgImage = R.drawable.your_action_image
-                                bgImage = "https://images.unsplash.com/photo-1544551763-46a8723ba3f9?q=80&w=2074&auto=format&fit=crop"
-                            )
-                        }
-                        Box(modifier = Modifier.weight(1f)) {
-                            HowItWorksCard(
-                                title = "Learn",
-                                description = "Compare species, see tips, explore habitat",
-                                color = Color(0xFF9C27B0), // Purple
-                                modifier = Modifier.fillMaxWidth(),
-                                // To use local: bgImage = R.drawable.your_learn_image
-                                bgImage = "https://images.unsplash.com/photo-1535591273668-578e31182c4f?q=80&w=2070&auto=format&fit=crop"
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // --- 2. BLOG SECTION ---
+            // 3. ECO-REPORT ENTRY (Stats Dashboard Link)
+            item {
+                SimpleReportCard(onClick = onNavigateToStats)
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            // 4. INVASIVE CATCH IN YOUR AREA (Recent Activity)
+            if (state.recentInvasiveSightings.isNotEmpty()) {
+                item {
+                    InvasiveCatchAreaSection(
+                        sightings = state.recentInvasiveSightings,
+                        userState = state.userLocationState,
+                        onSightingClick = onNavigateToCatchDetail
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
+
+            // 5. LATEST ARTICLES (Content Feed)
             if (state.blogs.isNotEmpty()) {
                 item {
                     Text(
-                        "Latest Articles",
+                        "Tips & Awareness",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                item {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(horizontal = 24.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(state.blogs) { blog ->
-                            ModernBlogCard(
-                                blog = blog,
-                                onClick = { onNavigateToBlogDetail(blog.id) },
-                                modifier = Modifier.width(320.dp)
-                            )
-                        }
-                    }
-                }
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
 
-            // --- 3. FISH COMPARISON SECTION ---
-            item {
-                Column(
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                ) {
-                    Text(
-                        "Quick Comparison",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(bottom = 16.dp)
+                items(state.blogs) { blog ->
+                    ModernBlogCard(
+                        blog = blog,
+                        onClick = { onNavigateToBlogDetail(blog.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 16.dp)
                     )
-
-                    // Simplified Comparison Layout without heavy Card wrapper
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Input 1
-                        ModernSpeciesSelector(
-                            label = "First Species",
-                            selected = selectedFish1,
-                            list = state.fishList,
-                            onSelect = { selectedFish1 = it }
-                        )
-
-                        // VS Indicator
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                thickness = 1.dp
-                            )
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        "VS",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-
-                        // Input 2
-                        ModernSpeciesSelector(
-                            label = "Second Species",
-                            selected = selectedFish2,
-                            list = state.fishList,
-                            onSelect = { selectedFish2 = it }
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Action Button
-                        Button(
-                            onClick = {
-                                if (selectedFish1 != null && selectedFish2 != null) {
-                                    if (selectedFish1!!.id == selectedFish2!!.id) {
-                                        Toast.makeText(context, "Please select different species", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        onNavigateToComparison(selectedFish1!!.id, selectedFish2!!.id)
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            enabled = selectedFish1 != null && selectedFish2 != null,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                            )
-                        ) {
-                            Text(
-                                "Compare Now",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 }
 
 @Composable
-fun HowItWorksCard(
-    title: String,
-    description: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-    bgImage: Any? = null // Changed: accepts String (URL) or Int (Drawable Resource ID)
+fun WelcomeHeader(user: UserData?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = "Welcome back,",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+            )
+            Text(
+                text = user?.username ?: "Explorer",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+
+        // Profile Picture Thumbnail
+        if (!user?.profilePictureUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = user!!.profilePictureUrl,
+                contentDescription = "Profile",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = (user?.username?.take(1) ?: "U").uppercase(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SimpleReportCard(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        shadowElevation = 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icon Box
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = "Ecosystem Report",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "View community statistics",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Go",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+fun InvasiveCatchAreaSection(
+    sightings: List<Sighting>,
+    userState: String?,
+    onSightingClick: (String) -> Unit
 ) {
+    val sectionTitle = if (!userState.isNullOrBlank()) {
+        "Nearby Catches"
+    } else {
+        "Recent Catches"
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Title Row
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = sectionTitle,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Horizontal List
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(sightings) { sighting ->
+                InvasiveCatchCard(sighting = sighting, onClick = { onSightingClick(sighting.id) })
+            }
+        }
+    }
+}
+
+@Composable
+fun InvasiveCatchCard(sighting: Sighting, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp),
-        modifier = modifier.height(140.dp)
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp),
+        modifier = Modifier
+            .width(220.dp)
+            .height(150.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Background Image (Supports URL or Drawable)
-            if (bgImage != null) {
+            // 1. Background Image
+            if (sighting.imageUrl.isNotBlank()) {
                 AsyncImage(
-                    model = bgImage,
-                    contentDescription = null,
+                    model = sighting.imageUrl,
+                    contentDescription = sighting.speciesName,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                // Dark Overlay Gradient for readability
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No Image", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            // 2. Gradient Overlay for Text Readability
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.3f),
+                                Color.Black.copy(alpha = 0.8f)
+                            ),
+                            startY = 100f
+                        )
+                    )
+            )
+
+            // 3. Text Content (Bottom Left)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
+            ) {
+                // Common Name
+                Text(
+                    text = sighting.speciesName,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                // Total Catches
+                Text(
+                    text = "Logged: ${sighting.quantity}",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SpeciesSpotlight(fishList: List<Fish>, onFishClick: (String) -> Unit) {
+    // Pick a random fish to spotlight (any species)
+    val fish = remember(fishList) { fishList.random() }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        Text(
+            text = "Species Spotlight",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp) // Slightly taller
+                .clickable { onFishClick(fish.id) }
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Background Image
+                AsyncImage(
+                    model = fish.imageUrl,
+                    contentDescription = fish.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                // Gradient Overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.3f),
-                                    Color.Black.copy(alpha = 0.7f)
-                                )
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f))
                             )
                         )
                 )
-            }
 
-            // Content
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        // Use white text if we have an image background
-                        color = if (bgImage != null) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (bgImage != null) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 16.sp,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ModernSpeciesSelector(
-    label: String,
-    selected: Fish?,
-    list: List<Fish>,
-    onSelect: (Fish) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .menuAnchor(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-            tonalElevation = 2.dp,
-            onClick = { expanded = true }
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+                // Content
                 Column(
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(20.dp)
                 ) {
+                    // Determine Badge Color and Text based on Type
+                    val isInvasive = fish.type.equals("Invasive", ignoreCase = true)
+                    val isNative = fish.type.equals("Native", ignoreCase = true)
+                    val isAlien = fish.type.equals("Alien", ignoreCase = true)
+
+                    val badgeColor = when {
+                        isInvasive -> MaterialTheme.colorScheme.error
+                        isNative -> Color(0xFF2E7D32) // Green
+                        isAlien -> Color(0xFFE65100) // Orange
+                        else -> Color.Gray
+                    }
+
+                    val badgeText = when {
+                        isInvasive -> "INVASIVE"
+                        isNative -> "NATIVE"
+                        isAlien -> "ALIEN"
+                        else -> fish.type.uppercase()
+                    }
+
+                    Surface(
+                        color = badgeColor,
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = fish.name,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = selected?.name ?: "Select Species",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = if (selected != null) FontWeight.Bold else FontWeight.Normal
-                        ),
-                        color = if (selected != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        text = fish.scientificName,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
-
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-        ) {
-            list.forEach { item ->
-                DropdownMenuItem(
-                    text = {
-                        Column {
-                            Text(item.name, fontWeight = FontWeight.SemiBold)
-                            Text(item.type, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                        }
-                    },
-                    onClick = { onSelect(item); expanded = false }
-                )
             }
         }
     }
@@ -416,127 +437,118 @@ fun ModernBlogCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = modifier
-            .height(260.dp)
+            .height(280.dp)
             .clickable(onClick = onClick)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (blog.coverImageUrl.isNotBlank()) {
-                AsyncImage(
-                    model = blog.coverImageUrl,
-                    contentDescription = blog.title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.secondaryContainer),
-                    contentAlignment = Alignment.Center
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top: Image Area
+            Box(
+                modifier = Modifier
+                    .weight(0.6f)
+                    .fillMaxWidth()
+            ) {
+                if (blog.coverImageUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = blog.coverImageUrl,
+                        contentDescription = blog.title,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = blog.title.take(1).uppercase(),
+                            style = MaterialTheme.typography.displayLarge,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+
+                // Badge (Top Left, Floating)
+                val badgeColor = when (blog.category.uppercase()) {
+                    "IDENTIFICATION" -> Color(0xFF2196F3)
+                    "RISK ALERT" -> Color(0xFFD32F2F)
+                    "NATIVE SPOTLIGHT" -> Color(0xFF4CAF50)
+                    else -> MaterialTheme.colorScheme.primary
+                }
+
+                Surface(
+                    color = badgeColor.copy(alpha = 0.9f), // Slightly transparent
+                    shape = RoundedCornerShape(bottomEnd = 12.dp),
+                    modifier = Modifier.align(Alignment.TopStart)
                 ) {
                     Text(
-                        text = blog.title.take(1).uppercase(),
-                        style = MaterialTheme.typography.displayLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                        text = blog.category.uppercase(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.4f),
-                                Color.Black.copy(alpha = 0.9f)
-                            ),
-                            startY = 0f
-                        )
-                    )
-            )
-
-            val badgeColor = when (blog.category.uppercase()) {
-                "IDENTIFICATION" -> Color(0xFF2196F3)
-                "RISK ALERT" -> Color(0xFFD32F2F)
-                "NATIVE SPOTLIGHT" -> Color(0xFF4CAF50)
-                else -> MaterialTheme.colorScheme.primary // Fixed syntax error here (was '=')
-            }
-
-            Surface(
-                color = badgeColor,
-                shape = RoundedCornerShape(bottomEnd = 16.dp),
-                modifier = Modifier.align(Alignment.TopStart)
-            ) {
-                Text(
-                    text = blog.category.uppercase(),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                )
-            }
-
+            // Bottom: Content Area
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
+                    .weight(0.4f)
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = blog.title,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    ),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column {
+                    Text(
+                        text = blog.title,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
                     Text(
                         text = blog.summary.ifBlank { "No summary available." },
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Read More",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF81D4FA)
-                            )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Read More",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = Color(0xFF81D4FA),
-                            modifier = Modifier
-                                .size(12.dp)
-                                .padding(start = 2.dp)
-                        )
-                    }
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .padding(start = 4.dp)
+                    )
                 }
             }
         }

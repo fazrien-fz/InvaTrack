@@ -114,7 +114,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation("com.google.maps.android:maps-compose-utils:6.1.0")
     implementation("com.google.maps.android:android-maps-utils:3.8.2")
-
+    implementation("com.google.maps.android:android-maps-utils:3.8.0")
 
     implementation(libs.tensorflow.lite)
     implementation ("org.tensorflow:tensorflow-lite-support:0.5.0")

@@ -14,10 +14,10 @@ import com.psm2.inva.presentation.features.add_fish.AddFishViewModel
 import com.psm2.inva.presentation.features.blog_detail.BlogDetailViewModel
 import com.psm2.inva.presentation.features.catch_detail.CatchDetailViewModel
 import com.psm2.inva.presentation.features.classification.ClassificationResultViewModel
-import com.psm2.inva.presentation.features.comparison.ComparisonViewModel
 import com.psm2.inva.presentation.features.edit_blog.EditBlogViewModel
 import com.psm2.inva.presentation.features.edit_catch.EditCatchViewModel
 import com.psm2.inva.presentation.features.edit_fish.EditFishViewModel
+import com.psm2.inva.presentation.features.edit_profile.EditProfileViewModel
 import com.psm2.inva.presentation.features.home.HomeViewModel
 import com.psm2.inva.presentation.features.identify.IdentifyViewModel
 import com.psm2.inva.presentation.features.map.MapViewModel
@@ -25,6 +25,7 @@ import com.psm2.inva.presentation.features.profile.ProfileViewModel
 import com.psm2.inva.presentation.features.report.ReportViewModel
 import com.psm2.inva.presentation.features.sign_in.SignInViewModel
 import com.psm2.inva.presentation.features.species_details.SpeciesDetailViewModel
+import com.psm2.inva.presentation.features.stats.StatsViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -35,19 +36,22 @@ val appModule = module {
     single { LocationServices.getFusedLocationProviderClient(androidApplication()) }
     single { GoogleAuthUiClient(context = androidApplication().applicationContext, credentialManager = get()) }
     single { Firebase.auth }
+    single { Firebase.firestore }
+    single { Firebase.storage }
+
+    // Updated AuthRepositoryImpl to take all necessary dependencies
     single<AuthRepository> {
         AuthRepositoryImpl(
+            googleAuthUiClient = get(),
             auth = get(),
-            googleAuthUiClient = get()
+            firestore = get(),
+            storage = get()
         )
     }
 
     //Data Repo
-    single { Firebase.firestore }
-    single { Firebase.storage }
     single<FishRepository> { FishRepositoryImpl(firestore = get(), storage = get()) }
     single<SightingRepository> { SightingRepositoryImpl(firestore = get(), storage = get(), auth = get()) }
-    // ComparisonRepository removed as it's no longer used
     single<BlogRepository> { BlogRepositoryImpl(firestore = get(), storage = get()) }
 
     //AI Classifier
@@ -60,10 +64,16 @@ val appModule = module {
         authRepository = get(),
         blogRepository = get(),
         fishRepository = get(),
-        sightingRepository = get() // Added SightingRepository
+        sightingRepository = get(),
+        fusedLocationClient = get(),
+        context = androidContext()
     ) }
 
     viewModel { ProfileViewModel(authRepository = get(), sightingRepository = get()) }
+
+    // New ViewModel for Edit Profile
+    viewModel { EditProfileViewModel(authRepository = get()) }
+
     viewModel { IdentifyViewModel(repository = get(), authRepository = get()) }
 
     viewModel { MapViewModel(
@@ -78,6 +88,9 @@ val appModule = module {
         fusedLocationClient = get(),
         authRepository = get()
     ) }
+
+    // NEW: Stats ViewModel
+    viewModel { StatsViewModel(repository = get()) }
 
     viewModel { AddFishViewModel(repository = get()) }
 
@@ -125,12 +138,5 @@ val appModule = module {
         sightingId = params.get(),
         repository = get(),
         fishRepository = get()
-    ) }
-
-    // Comparison View Models
-    viewModel { params -> ComparisonViewModel(
-        fishId1 = params.get(),
-        fishId2 = params.get(),
-        repository = get() // Injects FishRepository
     ) }
 }

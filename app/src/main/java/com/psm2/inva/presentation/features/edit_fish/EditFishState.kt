@@ -22,19 +22,6 @@ data class EditFishState(
     val imageUri: Uri? = null,
     val existingImageUrl: String = "",
 
-    // Comparison / Morphological Details
-    val headDescription: String = "",
-    val headImageUrl: String = "",
-    val headUri: Uri? = null,
-
-    val bodyDescription: String = "",
-    val bodyImageUrl: String = "",
-    val bodyUri: Uri? = null,
-
-    val tailDescription: String = "",
-    val tailImageUrl: String = "",
-    val tailUri: Uri? = null,
-
     val isUpdating: Boolean = false,
     val updateSuccess: Boolean = false,
     val updateError: String? = null,

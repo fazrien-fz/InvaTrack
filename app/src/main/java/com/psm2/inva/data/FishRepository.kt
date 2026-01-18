@@ -11,10 +11,7 @@ interface FishRepository {
 
     suspend fun updateFish(
         fish: Fish,
-        newImageUri: Uri?,
-        headUri: Uri? = null,
-        bodyUri: Uri? = null,
-        tailUri: Uri? = null
+        newImageUri: Uri?
     ): Result<Unit>
 
     suspend fun deleteFish(fishId: String): Result<Unit>

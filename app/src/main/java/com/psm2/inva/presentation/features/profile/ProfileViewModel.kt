@@ -25,21 +25,30 @@ class ProfileViewModel(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            val user = authRepository.getSignedInUser()
-            val isAdmin = user?.let { authRepository.isAdmin(it.userId) } ?: false
+            // 1. Get basic auth user
+            val authUser = authRepository.getSignedInUser()
+
+            // 2. If logged in, try to fetch full profile from Firestore
+            val fullUser = if (authUser != null) {
+                authRepository.getUserProfile(authUser.userId) ?: authUser
+            } else {
+                null
+            }
+
+            val isAdmin = fullUser?.let { authRepository.isAdmin(it.userId) } ?: false
 
             _state.update {
                 it.copy(
-                    signedInUser = user,
+                    signedInUser = fullUser,
                     isAdmin = isAdmin
                 )
             }
 
             // Load stats and sightings if user is logged in
-            if (user != null) {
+            if (fullUser != null) {
                 sightingRepository.getAllSightings().collect { sightings ->
                     // Filter sightings for the current user
-                    val mySightings = sightings.filter { it.userId == user.userId }
+                    val mySightings = sightings.filter { it.userId == fullUser.userId }
                         .sortedByDescending { it.date } // Sort by newest first
 
                     // Calculate Stats

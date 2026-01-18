@@ -9,7 +9,8 @@ data class HomeState(
     val user: UserData? = null,
     val blogs: List<Blog> = emptyList(),
     val fishList: List<Fish> = emptyList(),
-    val recentInvasiveSightings: List<Sighting> = emptyList(), // Added field
+    val recentInvasiveSightings: List<Sighting> = emptyList(),
+    val userLocationState: String? = null, // Added field for UI display
     val isLoading: Boolean = false,
     val error: String? = null
 )

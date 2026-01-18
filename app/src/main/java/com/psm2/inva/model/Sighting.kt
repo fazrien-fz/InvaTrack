@@ -15,15 +15,16 @@ data class Sighting(
 
     // Angler Stats
     val quantity: Int = 1,
-    val length: Double = 0.0, // New: Length in cm
-    val weight: Double = 0.0, // New: Weight in kg
+    val length: Double = 0.0,
+    val weight: Double = 0.0,
 
     // The Essentials & Context
     val actionTaken: String = "Released",
-    val baitUsed: String = "", // New: Bait info
+    val baitUsed: String = "",
     val locationPrivacy: String = "Share Spot",
     val location: GeoPoint = GeoPoint(0.0, 0.0),
-    val locationDescription: String = "",
+    val locationDescription: String = "", // e.g., "Tasek Lagenda"
+    val locationState: String = "",       // e.g., "Pahang, MY" - New Field
     val date: Timestamp = Timestamp.now()
 ) {
     val imageUrl: String

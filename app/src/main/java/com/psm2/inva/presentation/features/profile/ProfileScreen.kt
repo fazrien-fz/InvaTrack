@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -33,13 +34,23 @@ import java.util.Locale
 fun ProfileScreen(
     state: ProfileState,
     onSignOut: () -> Unit,
-    onNavigateToCatchDetail: (String) -> Unit // New callback
+    onNavigateToCatchDetail: (String) -> Unit,
+    onNavigateToEditProfile: () -> Unit = {} // Added default for compatibility
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile", fontWeight = FontWeight.Bold) },
+                title = { }, // Removed "Profile" text
                 actions = {
+                    // Edit Profile Button
+                    IconButton(onClick = onNavigateToEditProfile) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Profile",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // Sign Out Button
                     IconButton(onClick = onSignOut) {
                         Icon(
                             imageVector = Icons.Default.ExitToApp,
@@ -93,10 +104,28 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Full Name (Primary)
+                    val fullName = if (!state.signedInUser?.firstName.isNullOrBlank() || !state.signedInUser?.lastName.isNullOrBlank()) {
+                        "${state.signedInUser?.firstName.orEmpty()} ${state.signedInUser?.lastName.orEmpty()}".trim()
+                    } else {
+                        "Guest User"
+                    }
+
                     Text(
-                        text = state.signedInUser?.username ?: "Guest",
+                        text = fullName,
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Username (Secondary)
+                    if (!state.signedInUser?.username.isNullOrBlank()) {
+                        Text(
+                            text = "${state.signedInUser?.username}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -121,15 +150,6 @@ fun ProfileScreen(
                         value = state.invasiveRemovedCount.toString(),
                         color = Color.Red,
                         containerColor = Color(0xFFFFEBEE), // Light Red
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    // Native Released Card
-                    StatCard(
-                        label = "Native Released",
-                        value = state.nativeReleasedCount.toString(),
-                        color = Color(0xFF2E7D32), // Green
-                        containerColor = Color(0xFFE8F5E9), // Light Green
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -250,33 +270,6 @@ fun UserCatchItem(sighting: Sighting, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     maxLines = 1
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Right: Badge
-            // Determine Badge Type
-            val isRemoved = sighting.actionTaken.equals("Removed", ignoreCase = true)
-            val isReleased = sighting.actionTaken.equals("Released", ignoreCase = true)
-
-            // Note: Prioritizing action taken, but can also check species category if needed for specific logic
-            // Assuming "Removed" implies Invasive handling and "Released" implies Native handling usually,
-            // but simply showing the action as requested.
-
-            val badgeText = if (isRemoved) "REMOVED" else if (isReleased) "RELEASED" else sighting.actionTaken.uppercase()
-            val badgeColor = if (isRemoved) Color.Red else if (isReleased) Color(0xFF4CAF50) else Color.Gray
-
-            Surface(
-                color = badgeColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(4.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, badgeColor)
-            ) {
-                Text(
-                    text = badgeText,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
-                    color = badgeColor,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
         }

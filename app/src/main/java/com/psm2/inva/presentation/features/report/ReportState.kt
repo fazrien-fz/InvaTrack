@@ -11,12 +11,13 @@ data class ReportState(
     val imageUris: List<Uri> = emptyList(),
     val location: LatLng? = null,
     val locationDescription: String = "",
+    val locationState: String = "", // New field to hold state info
     val actionTaken: String = "Released",
 
     // Angler Stats
     val quantity: String = "1",
-    val length: String = "", // Input as String for easier handling
-    val weight: String = "", // Input as String
+    val length: String = "",
+    val weight: String = "",
 
     // The Context
     val baitUsed: String = "",

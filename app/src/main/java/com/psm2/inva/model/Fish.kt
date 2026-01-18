@@ -15,13 +15,5 @@ data class Fish(
     val diet: String = "",
     val origin: String = "",
     val impact: String = "",
-    val conservationStatus: String = "(NE) Not Evaluated",
-
-    // Comparison / Morphological Details
-    val headDescription: String = "",
-    val headImageUrl: String = "",
-    val bodyDescription: String = "",
-    val bodyImageUrl: String = "",
-    val tailDescription: String = "",
-    val tailImageUrl: String = ""
+    val conservationStatus: String = "(NE) Not Evaluated"
 )

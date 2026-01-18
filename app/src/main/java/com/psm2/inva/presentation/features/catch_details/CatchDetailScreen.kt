@@ -1,6 +1,7 @@
 package com.psm2.inva.presentation.features.catch_detail
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
@@ -169,38 +172,12 @@ fun CatchDetailScreen(
 
                 // --- 2. Details Content ---
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Header: Name and Badge
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = sighting.speciesName,
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        // Action Badge
-                        val isRemoved = sighting.actionTaken.equals("Removed", ignoreCase = true)
-                        val isReleased = sighting.actionTaken.equals("Released", ignoreCase = true)
-                        val badgeText = if (isRemoved) "REMOVED" else if (isReleased) "RELEASED" else sighting.actionTaken.uppercase()
-                        val badgeColor = if (isRemoved) Color.Red else if (isReleased) Color(0xFF4CAF50) else Color.Gray
-                        val containerColor = badgeColor.copy(alpha = 0.1f)
-
-                        Surface(
-                            color = containerColor,
-                            shape = RoundedCornerShape(8.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, badgeColor)
-                        ) {
-                            Text(
-                                text = badgeText,
-                                color = badgeColor,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
+                    // Header: Name
+                    Text(
+                        text = sighting.speciesName,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -240,6 +217,30 @@ fun CatchDetailScreen(
                             icon = Icons.Default.SetMeal,
                             value = "${sighting.quantity}",
                             label = "Quantity"
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Action Taken (Catch & Release Header)
+                    val isRemoved = sighting.actionTaken.equals("Removed", ignoreCase = true)
+                    val isReleased = sighting.actionTaken.equals("Released", ignoreCase = true)
+
+                    val actionText = if (isRemoved) "Removed" else if (isReleased) "Released" else sighting.actionTaken
+
+                    // Simple Text Format without Card
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Catch & Release?",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.Gray
+                        )
+                        Text(
+                            text = actionText,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (isRemoved) Color.Red else if (isReleased) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
                         )
                     }
 
