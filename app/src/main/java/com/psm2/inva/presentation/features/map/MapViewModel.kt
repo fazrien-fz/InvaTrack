@@ -1,7 +1,6 @@
 package com.psm2.inva.presentation.features.map
 
 import android.annotation.SuppressLint
-import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class MapViewModel(
     private val fusedLocationProviderClient: FusedLocationProviderClient,
@@ -65,11 +63,8 @@ class MapViewModel(
         }
     }
 
-
     fun updateMapCenter(center: LatLng) {
-        _state.update { it.copy(mapCenter = center) }
-        // Generate alerts based on where the user is LOOKING (map center)
-        generateAlerts(center, _state.value.sightings)
+        // Kept empty to satisfy MapScreen callback if needed, but logic removed as alerts are gone
     }
 
     fun updateSearchQuery(query: String) {
@@ -145,13 +140,8 @@ class MapViewModel(
                         val userLatLng = LatLng(it.latitude, it.longitude)
                         _state.update { currentState ->
                             currentState.copy(
-                                userLocation = userLatLng,
-                                mapCenter = currentState.mapCenter ?: userLatLng
+                                userLocation = userLatLng
                             )
-                        }
-                        // If we just initialized the map center, generate alerts for it
-                        if (_state.value.mapCenter == userLatLng) {
-                            generateAlerts(userLatLng, _state.value.sightings)
                         }
                     }
                 }
@@ -168,16 +158,9 @@ class MapViewModel(
                     Log.e("MapViewModel", "Failed to load sightings", e)
                 }
                 .collect { sightings ->
-                    // Extract unique species names
-                    val speciesList = sightings.map { it.speciesName }
-                        .filter { it.isNotBlank() }
-                        .distinct()
-                        .sorted()
-
                     _state.update { currentState ->
                         currentState.copy(
                             sightings = sightings,
-                            availableSpecies = speciesList, // Update available species
                             filteredSightings = filterSightings(
                                 sightings,
                                 currentState.searchQuery,
@@ -188,82 +171,7 @@ class MapViewModel(
                             )
                         )
                     }
-                    // Recalculate alerts using ALL public invasive sightings to ensure safety warnings persist
-                    _state.value.mapCenter?.let { center ->
-                        generateAlerts(center, sightings)
-                    }
                 }
         }
-    }
-
-    private fun generateAlerts(centerLocation: LatLng, sightings: List<Sighting>) {
-        val alerts = mutableListOf<MapAlert>()
-        val nearbyRadiusKm = 20.0
-        val userLocation = _state.value.userLocation
-
-        // Always base alerts on Invasive Species to keep users safe/informed
-        val invasiveSightings = sightings.filter {
-            it.category.equals("Invasive", ignoreCase = true)
-        }
-
-        val speciesMap = mutableMapOf<String, MutableList<Sighting>>()
-
-        invasiveSightings.forEach { sighting ->
-            val results = FloatArray(1)
-            Location.distanceBetween(
-                centerLocation.latitude, centerLocation.longitude,
-                sighting.location.latitude, sighting.location.longitude,
-                results
-            )
-            val distanceKm = results[0] / 1000
-
-            if (distanceKm <= nearbyRadiusKm) {
-                if (!speciesMap.containsKey(sighting.speciesName)) {
-                    speciesMap[sighting.speciesName] = mutableListOf()
-                }
-                speciesMap[sighting.speciesName]?.add(sighting)
-            }
-        }
-
-        speciesMap.forEach { (species, sightingsList) ->
-            if (sightingsList.size >= 3) {
-                val locationName = sightingsList.firstOrNull { it.locationDescription.isNotBlank() }?.locationDescription
-                    ?: "this area"
-
-                alerts.add(
-                    MapAlert(
-                        id = UUID.randomUUID().toString(),
-                        title = "Population Surge Alert",
-                        message = "$species population increasing in $locationName (${sightingsList.size} sightings)",
-                        level = AlertLevel.HIGH
-                    )
-                )
-            } else {
-                sightingsList.forEach { sighting ->
-                    val distString = if (userLocation != null) {
-                        val results = FloatArray(1)
-                        Location.distanceBetween(
-                            userLocation.latitude, userLocation.longitude,
-                            sighting.location.latitude, sighting.location.longitude,
-                            results
-                        )
-                        "%.1fkm from you".format(results[0] / 1000)
-                    } else {
-                        "in this area"
-                    }
-
-                    alerts.add(
-                        MapAlert(
-                            id = sighting.speciesName + sighting.date.toString(),
-                            title = "Invasive Sighting Nearby",
-                            message = "$species sighted $distString",
-                            level = AlertLevel.MEDIUM
-                        )
-                    )
-                }
-            }
-        }
-
-        _state.update { it.copy(alerts = alerts.sortedBy { alert -> alert.level }) }
     }
 }

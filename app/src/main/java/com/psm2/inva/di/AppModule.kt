@@ -60,14 +60,8 @@ val appModule = module {
     //ViewModels
     viewModel { SignInViewModel(repository = get()) }
 
-    viewModel { HomeViewModel(
-        authRepository = get(),
-        blogRepository = get(),
-        fishRepository = get(),
-        sightingRepository = get(),
-        fusedLocationClient = get(),
-        context = androidContext()
-    ) }
+    // Simplified HomeViewModel (Only needs BlogRepository now)
+    viewModel { HomeViewModel(blogRepository = get()) }
 
     viewModel { ProfileViewModel(authRepository = get(), sightingRepository = get()) }
 

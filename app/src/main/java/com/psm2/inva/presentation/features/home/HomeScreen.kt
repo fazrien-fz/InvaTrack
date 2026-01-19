@@ -2,11 +2,9 @@ package com.psm2.inva.presentation.features.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -28,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.psm2.inva.model.Blog
-import com.psm2.inva.model.Fish
-import com.psm2.inva.model.Sighting
 import com.psm2.inva.model.UserData
 
 @Composable
@@ -52,42 +47,14 @@ fun HomeScreen(
                 .padding(bottom = padding.calculateBottomPadding()),
             contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp)
         ) {
-            // 1. Welcome Header (New)
+            // 1. ECO-REPORT ENTRY (Stats Dashboard Link)
             item {
-                WelcomeHeader(user = state.user)
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // 2. SPECIES SPOTLIGHT (Moved to Top for Visual Impact)
-            if (state.fishList.isNotEmpty()) {
-                item {
-                    SpeciesSpotlight(
-                        fishList = state.fishList,
-                        onFishClick = onNavigateToSpeciesDetail
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-            }
-
-            // 3. ECO-REPORT ENTRY (Stats Dashboard Link)
-            item {
+                Spacer(modifier = Modifier.height(16.dp)) // Extra spacing since header is gone
                 SimpleReportCard(onClick = onNavigateToStats)
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // 4. INVASIVE CATCH IN YOUR AREA (Recent Activity)
-            if (state.recentInvasiveSightings.isNotEmpty()) {
-                item {
-                    InvasiveCatchAreaSection(
-                        sightings = state.recentInvasiveSightings,
-                        userState = state.userLocationState,
-                        onSightingClick = onNavigateToCatchDetail
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-
-            // 5. LATEST ARTICLES (Content Feed)
+            // 2. LATEST ARTICLES (Content Feed)
             if (state.blogs.isNotEmpty()) {
                 item {
                     Text(
@@ -108,57 +75,6 @@ fun HomeScreen(
                             .padding(bottom = 16.dp)
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun WelcomeHeader(user: UserData?) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = "Welcome back,",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-            Text(
-                text = user?.username ?: "Explorer",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-
-        // Profile Picture Thumbnail
-        if (!user?.profilePictureUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = user!!.profilePictureUrl,
-                contentDescription = "Profile",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = (user?.username?.take(1) ?: "U").uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
             }
         }
     }
@@ -221,211 +137,6 @@ fun SimpleReportCard(onClick: () -> Unit) {
                 contentDescription = "Go",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
-        }
-    }
-}
-
-@Composable
-fun InvasiveCatchAreaSection(
-    sightings: List<Sighting>,
-    userState: String?,
-    onSightingClick: (String) -> Unit
-) {
-    val sectionTitle = if (!userState.isNullOrBlank()) {
-        "Nearby Catches"
-    } else {
-        "Recent Catches"
-    }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // Title Row
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-        ) {
-            Text(
-                text = sectionTitle,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Horizontal List
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(sightings) { sighting ->
-                InvasiveCatchCard(sighting = sighting, onClick = { onSightingClick(sighting.id) })
-            }
-        }
-    }
-}
-
-@Composable
-fun InvasiveCatchCard(sighting: Sighting, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        modifier = Modifier
-            .width(220.dp)
-            .height(150.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // 1. Background Image
-            if (sighting.imageUrl.isNotBlank()) {
-                AsyncImage(
-                    model = sighting.imageUrl,
-                    contentDescription = sighting.speciesName,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No Image", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            // 2. Gradient Overlay for Text Readability
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.3f),
-                                Color.Black.copy(alpha = 0.8f)
-                            ),
-                            startY = 100f
-                        )
-                    )
-            )
-
-            // 3. Text Content (Bottom Left)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
-            ) {
-                // Common Name
-                Text(
-                    text = sighting.speciesName,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                // Total Catches
-                Text(
-                    text = "Logged: ${sighting.quantity}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SpeciesSpotlight(fishList: List<Fish>, onFishClick: (String) -> Unit) {
-    // Pick a random fish to spotlight (any species)
-    val fish = remember(fishList) { fishList.random() }
-
-    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-        Text(
-            text = "Species Spotlight",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            elevation = CardDefaults.cardElevation(4.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp) // Slightly taller
-                .clickable { onFishClick(fish.id) }
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Background Image
-                AsyncImage(
-                    model = fish.imageUrl,
-                    contentDescription = fish.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-
-                // Gradient Overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.9f))
-                            )
-                        )
-                )
-
-                // Content
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(20.dp)
-                ) {
-                    // Determine Badge Color and Text based on Type
-                    val isInvasive = fish.type.equals("Invasive", ignoreCase = true)
-                    val isNative = fish.type.equals("Native", ignoreCase = true)
-                    val isAlien = fish.type.equals("Alien", ignoreCase = true)
-
-                    val badgeColor = when {
-                        isInvasive -> MaterialTheme.colorScheme.error
-                        isNative -> Color(0xFF2E7D32) // Green
-                        isAlien -> Color(0xFFE65100) // Orange
-                        else -> Color.Gray
-                    }
-
-                    val badgeText = when {
-                        isInvasive -> "INVASIVE"
-                        isNative -> "NATIVE"
-                        isAlien -> "ALIEN"
-                        else -> fish.type.uppercase()
-                    }
-
-                    Surface(
-                        color = badgeColor,
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = badgeText,
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = fish.name,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
-                    )
-                    Text(
-                        text = fish.scientificName,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic),
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                }
-            }
         }
     }
 }

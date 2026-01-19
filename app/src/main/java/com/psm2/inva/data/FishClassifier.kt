@@ -14,7 +14,7 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 
 class FishClassifier(
     private val context: Context,
-    private val modelPath: String = "best_float32.tflite",
+    private val modelPath: String = "best.tflite",
     private val labelPath: String = "labels.txt"
 ) {
     private var interpreter: Interpreter? = null

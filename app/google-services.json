@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "286211023553-1hg9vibog22eodbcmhptfmns3s5kv4e4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.psm2.inva",
+            "certificate_hash": "fbc2b06174d97d6aa53c6c4a09ad82f72856db85"
+          }
+        },
+        {
           "client_id": "286211023553-nioo98fqhgmdfm9qo4ac73qhsrn7ncll.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
